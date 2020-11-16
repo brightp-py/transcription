@@ -6,8 +6,6 @@ with open("cmu_dictionary.txt", 'r') as f:
 with open("symbol.json", 'r') as f:
     SYMBOL = json.load(f)
 
-print(SYMBOL["nucleus"].items())
-
 def syllabalize(word):
     
     word = word.split(' ')
@@ -54,25 +52,34 @@ def syllabalize(word):
         yield a
 
 d = {}
+bad = 0
 
 for line in lines:
-    a, b = line.split('\t', 1)
+    try:
+        a, b = line.split('\t', 1)
+    except Exception:
+        print(line)
+        continue
 
     a = a.split('(')[0]
     b = b.replace("ER", "R")
     b = b.replace("DH", "TH")
     b = b.replace("HH W", "W")
     b = b.replace("L V TH", "L F TH")
+    b = b.replace("D TH", "T TH")
 
     for syl in syllabalize(b):
         if syl["n"] == '':
             print(b)
             print(syl)
+            bad += 1
 
     if b not in d:
         d[b] = []
     
     d[b].append(a)
+
+print("BAD:", bad)
 
 with open("cmu.json", 'w') as f:
     json.dump(d, f)
