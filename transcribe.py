@@ -9,13 +9,23 @@ BIT = [{alpha[a]: 10**a for a in range(len(alpha))} for alpha in [ONST, NCLS, CO
 with open("symbol.json", 'r', encoding = 'utf-8') as f:
     SYMBOL = json.load(f)
 
-print(SYMBOL)
+with open("pronunciation.json", 'r') as f:
+    CMU = json.load(f)
+
+def findWord(word):
+
+    if word in CMU:
+        return CMU[word]
+    
+    return None
 
 class Transcription:
 
     def __init__(self):
 
         self.pressed = set()
+        self.english = None
+        self.word = []
     
     def addKey(self, key: keyboard.KeyboardEvent):
 
@@ -25,19 +35,29 @@ class Transcription:
     def removeKey(self, key: keyboard.KeyboardEvent):
 
         syll = [sum(part[a] for a in self.pressed if a in part) for part in BIT]
+        done = "space" in self.pressed
         self.pressed = set()
 
         if sum(syll) > 0:
             print(syll)
 
-        toret = ""
-
         for i, n in enumerate(["onset", "nucleus", "coda"]):
             if str(syll[i]) in SYMBOL[n]:
-                toret += SYMBOL[n][str(syll[i])]
+                self.word.append(SYMBOL[n][str(syll[i])])
+
+        if done:
+            print(self.word)
+            self.english = findWord(' '.join(self.word))
+            self.word = []
+    
+    def getWord(self):
+
+        if self.english:
+            toret = self.english
+            self.english = None
+            return toret
         
-        if len(toret):
-            print(toret)
+        return None
     
     def isDone(self):
 
@@ -51,4 +71,5 @@ if __name__ == "__main__":
     keyboard.on_release(t.removeKey, suppress = True)
 
     while not t.isDone():
-        pass
+        if w := t.getWord():
+            print(w)
