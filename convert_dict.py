@@ -6,6 +6,9 @@ with open("cmu_dictionary.txt", 'r') as f:
 with open("symbol.json", 'r') as f:
     SYMBOL = json.load(f)
 
+with open("freq.json", 'r') as f:
+    FREQ = json.load(f)
+
 def syllabalize(word):
     
     word = word.split(' ')
@@ -53,6 +56,8 @@ def syllabalize(word):
 
 d = {}
 bad = 0
+found = 0
+total = 0
 
 for line in lines:
     try:
@@ -74,12 +79,20 @@ for line in lines:
             print(syl)
             bad += 1
 
-    if b not in d:
-        d[b] = []
+    if a.lower() in FREQ:
+        freq = FREQ[a.lower()]
+        found += 1
+    else:
+        freq = 0
     
-    d[b].append(a)
+    total += 1
+    
+    if b not in d:
+        d[b] = {}
+    
+    d[b][a] = freq
 
-print("BAD:", bad)
+print("FOUND:", 100 * found / total, "%")
 
 with open("cmu.json", 'w') as f:
     json.dump(d, f)
