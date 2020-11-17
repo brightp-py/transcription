@@ -9,7 +9,7 @@ BIT = [{alpha[a]: 10**a for a in range(len(alpha))} for alpha in [ONST, NCLS, CO
 with open("symbol.json", 'r', encoding = 'utf-8') as f:
     SYMBOL = json.load(f)
 
-with open("pronunciation.json", 'r') as f:
+with open("cmu.json", 'r') as f:
     CMU = json.load(f)
 
 def findWord(word):
@@ -17,7 +17,7 @@ def findWord(word):
     if word in CMU:
         return CMU[word]
     
-    return None
+    return {''.join(word): 0}
 
 class Transcription:
 
@@ -26,8 +26,20 @@ class Transcription:
         self.pressed = set()
         self.english = None
         self.word = []
+        self.history = []
+        self.last = []
     
     def addKey(self, key: keyboard.KeyboardEvent):
+
+        if key.name == "backspace":
+            if len(self.history):
+                self.deleteLast()
+                self.last = []
+            return
+        
+        if key.name in "[]":
+            if len(self.last) > 1:
+                self.shiftLast(key.name == '[')
 
         self.pressed.add(key.name)
         # print(self.pressed)
@@ -35,7 +47,7 @@ class Transcription:
     def removeKey(self, key: keyboard.KeyboardEvent):
 
         syll = [sum(part[a] for a in self.pressed if a in part) for part in BIT]
-        done = "space" in self.pressed
+        done = "space" not in self.pressed and sum(syll) > 0
         self.pressed = set()
 
         if sum(syll) > 0:
@@ -47,21 +59,47 @@ class Transcription:
 
         if done:
             print(self.word)
-            self.english = findWord(' '.join(self.word))
+            print(' '.join(self.word))
+            
+            results = findWord(' '.join(self.word))
+            self.last = sorted(results, key = lambda x : results[x], reverse = True)
+
+            print(self.last)
+            self.english = len(self.last) > 0
             self.word = []
     
-    def getWord(self):
+    def writeWord(self):
 
         if self.english:
-            toret = self.english
+            keyboard.write(self.last[0] + ' ')
+            self.history.append(len(self.last[0]) + 1)
             self.english = None
-            return toret
-        
-        return None
     
     def isDone(self):
 
         return "esc" in self.pressed
+    
+    def deleteLast(self):
+
+        for i in range(self.history[-1]):
+            keyboard.press("backspace")
+        del self.history[-1]
+    
+    def shiftLast(self, moreLikely = True):
+
+        if len(self.last):
+
+            self.deleteLast()
+
+            if moreLikely:
+                self.last.insert(0, self.last[-1])
+                del self.last[-1]
+            
+            else:
+                self.last.append(self.last[0])
+                del self.last[0]
+            
+            self.english = True
 
 if __name__ == "__main__":
 
@@ -71,5 +109,4 @@ if __name__ == "__main__":
     keyboard.on_release(t.removeKey, suppress = True)
 
     while not t.isDone():
-        if w := t.getWord():
-            print(w)
+        t.writeWord()
