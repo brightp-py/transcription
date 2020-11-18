@@ -17,7 +17,7 @@ def findWord(word):
     if word in CMU:
         return CMU[word]
     
-    return {''.join(word): 0}
+    return {f"[{word.replace(' ', '')}]": 0}
 
 class Transcription:
 
@@ -28,6 +28,7 @@ class Transcription:
         self.word = []
         self.history = []
         self.last = []
+        self.newword = True
     
     def addKey(self, key: keyboard.KeyboardEvent):
 
@@ -35,6 +36,10 @@ class Transcription:
             if len(self.history):
                 self.deleteLast()
                 self.last = []
+            return
+        
+        if key.name == "`":
+            keyboard.press(' ')
             return
         
         if key.name in "[]":
@@ -47,8 +52,14 @@ class Transcription:
     def removeKey(self, key: keyboard.KeyboardEvent):
 
         syll = [sum(part[a] for a in self.pressed if a in part) for part in BIT]
-        done = "space" not in self.pressed and sum(syll) > 0
+        done = "space" in self.pressed
         self.pressed = set()
+
+        if not sum(syll) and done and not len(self.word):
+            keyboard.press("backspace")
+            keyboard.write(".  ")
+            self.history.append(2)
+            return
 
         if sum(syll) > 0:
             print(syll)
@@ -62,6 +73,14 @@ class Transcription:
             print(' '.join(self.word))
             
             results = findWord(' '.join(self.word))
+            print(results)
+
+            if results == {' '.join(self.word): 0}:
+                if self.word[-1] == 'S':
+                    results = findWord(' '.join(self.word[:-1]) + ' Z')
+                if self.word[-1] == 'L':
+                    results = findWord(' '.join(self.word[:-1]) + ' AH L')
+            
             self.last = sorted(results, key = lambda x : results[x], reverse = True)
 
             print(self.last)
@@ -71,7 +90,8 @@ class Transcription:
     def writeWord(self):
 
         if self.english:
-            keyboard.write(self.last[0] + ' ')
+            keyboard.write(self.last[0].lower() + " ")
+            print(len(self.last[0]))
             self.history.append(len(self.last[0]) + 1)
             self.english = None
     
