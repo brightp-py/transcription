@@ -73,6 +73,17 @@ for line in lines:
     b = b.replace("L V TH", "L F TH")
     b = b.replace("D TH", "T TH")
 
+    if b[:6] == "IH K S" and a[0] == "E":
+        nline = f"{a}\tEH{b[2:]}"
+        print("Add", nline)
+        lines.append(nline)
+    
+    if "EH R" in b:
+        nword = b.replace("EH R", "EY R")
+        nline = f"{a}\t{nword}"
+        print("Add", nline)
+        lines.append(nline)
+
     for syl in syllabalize(b):
         if syl["n"] == '':
             print(b)
